@@ -29,14 +29,7 @@
 
 ## 🛠 技术架构
 
-```mermaid
-graph LR
-    A[👤 贴吧用户] -->|输入书名| B[🌐 Cloudflare Pages]
-    B -->|全栈 _worker.js| C[🗄️ Cloudflare D1<br/>小说数据库]
-    B -->|频率校验| D[📦 Cloudflare KV<br/>限流 + PV 统计]
-    C -->|返回单条结果| B
-    B -->|渲染 HTML| A
-```
+
 
 | 层 | 技术 |
 |----|------|
