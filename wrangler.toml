@@ -1,0 +1,21 @@
+name = "novel-api"
+main = "worker.js"          
+compatibility_date = "2025-01-01"  
+
+routes = [
+  { pattern = "www.mysearch.dpdns.org/*", zone_name = "mysearch.dpdns.org" }
+]
+workers_dev = true
+
+[vars]
+# 替换成你爬取的那个小说网站的根域名（例如 https://www.biquge.co）
+BASE_URL = "https://www.libahao.com"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "782862d5985f4997864169601a2317a1"   # 已替换
+
+[[d1_databases]]
+binding = "DB"
+database_name = "novel_db"
+database_id = "869a81bb-e683-4450-b5d9-6c6638121ee5"   # 已替换
