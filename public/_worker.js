@@ -40,8 +40,8 @@ const html = `<!DOCTYPE html>
     
     <div class="card shadow-sm p-4">
         <form id="searchForm">
-            <div class="input-group mb-3">
-                <input type="text" id="keyword" class="form-control form-control-lg" placeholder="请输入小说名称关键词..." required>
+            <div class="input-group mb-2">
+                <input type="text" id="keyword" class="form-control form-control-lg" placeholder="输入书名关键词..." required>
                 <button class="btn btn-primary btn-lg" type="submit" id="searchBtn">
                     搜索
                     <div class="spinner-border spinner-border-sm text-light ms-2" id="loading" role="status">
@@ -49,6 +49,7 @@ const html = `<!DOCTYPE html>
                     </div>
                 </button>
             </div>
+            <div class="quota-hint" style="font-size:0.8rem;color:#999;text-align:center;margin-top:8px;">⏳ 额度有限，30 秒间隔，耗完即止</div>
         </form>
 
         <div id="errorMsg" class="alert alert-danger" style="display: none;"></div>
@@ -59,7 +60,7 @@ const html = `<!DOCTYPE html>
             </div>
             <div class="card-body">
                 <h5 class="card-title" id="bookTitle"></h5>
-                <p class="card-text">找到匹配的一本书籍！点击下方链接前往阅读或查看详情。</p>
+                <p class="card-text">点击下方链接前往阅读或查看详情。</p>
                 <a href="#" id="bookUrl" target="_blank" class="btn btn-outline-success w-100">前往书籍页面</a>
             </div>
         </div>
@@ -67,12 +68,11 @@ const html = `<!DOCTYPE html>
 </div>
 
 <div class="footer">
-    本页已被浏览 <span id="totalPageViews" class="badge bg-info">0</span> 次 · 
-    累计已查询 <span id="totalQueries" class="badge bg-secondary">0</span> 次<br>
-    &copy; 2026 小说快搜 | Powered by Cloudflare Pages</div>
+    浏览 <span id="totalPageViews" class="badge bg-info">0</span> ·
+    查询 <span id="totalQueries" class="badge bg-secondary">0</span>
+</div>
 
 <script>
-    // 如果你在前端使用与 Worker 相同的域名，可以改为空字符串 '' 从而使用相对路径
     const API_BASE = '';
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -107,15 +107,15 @@ const html = `<!DOCTYPE html>
                 fetchStats(); // Update stats
             } else {
                 if (response.status === 429) {
-                    showError("查询太频繁啦！请稍微等一分钟后再试。");
+                    showError("⏳ 查询太频繁，请等 30 秒后再试。");
                 } else if (response.status === 404) {
-                    showError("哎呀，没有找到相关的书籍，请更换关键词试试。");
+                    showError("未找到，请更换关键词试试。");
                 } else {
-                    showError(data.error || "发生了未知错误。");
+                    showError("服务繁忙，请稍后重试。");
                 }
             }
         } catch (error) {
-            showError("网络请求失败，请检查您的网络连接或稍后重试。");
+            showError("网络异常，请稍后重试。");
         } finally {
             btn.disabled = false;
             loading.style.display = 'none';
@@ -131,7 +131,6 @@ const html = `<!DOCTYPE html>
                 document.getElementById('totalPageViews').textContent = data.page_views || 0;
             }
         } catch(e) {
-            console.error('Fetch stats failed', e);
         }
     }
 
@@ -169,17 +168,11 @@ export default {
             const current = await env.RATE_LIMIT_KV.get('stats:page_views');
             const count = current ? parseInt(current) + 1 : 1;
             await env.RATE_LIMIT_KV.put('stats:page_views', count.toString());
-          } catch(e) { console.warn('PV write failed', e); }
+          } catch(e) {}
         })()
       );
       return new Response(html, {
         headers: { 'Content-Type': 'text/html;charset=UTF-8' }
-      });
-    }
-
-    if (path === '/health') {
-      return new Response(JSON.stringify({ status: "ok" }), {
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
     }
 
@@ -206,7 +199,7 @@ export default {
     if (path === '/search') {
       const keyword = url.searchParams.get('keyword');
       if (!keyword) {
-        return new Response(JSON.stringify({ error: "Missing keyword" }), {
+        return new Response(JSON.stringify({}), {
           status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders }
         });
       }
@@ -217,27 +210,26 @@ export default {
       try {
         rateData = await env.RATE_LIMIT_KV.get(kvKey, { type: "json" });
       } catch (e) {
-        console.warn("KV Get failed", e);
       }
       
       const now = Date.now();
       
       if (!rateData) {
-        rateData = { count: 1, resetAt: now + 60000 }; 
+        rateData = { count: 1, resetAt: now + 30000 }; 
       } else {
         if (now > rateData.resetAt) {
-          rateData = { count: 1, resetAt: now + 60000 };
+          rateData = { count: 1, resetAt: now + 30000 };
         } else {
           rateData.count++;
         }
       }
 
       ctx.waitUntil(
-        env.RATE_LIMIT_KV.put(kvKey, JSON.stringify(rateData), { expirationTtl: 60 }).catch(console.warn)
+        env.RATE_LIMIT_KV.put(kvKey, JSON.stringify(rateData), { expirationTtl: 30 }).catch(() => {})
       );
 
-      if (rateData.count > 10) {
-        return new Response(JSON.stringify({ error: "Too many requests, try again later." }), {
+      if (rateData.count > 1) {
+        return new Response(JSON.stringify({}), {
           status: 429, headers: { 'Content-Type': 'application/json', ...corsHeaders }
         });
       }
@@ -272,7 +264,7 @@ export default {
           const { results } = await env.DB.prepare('SELECT title, url FROM books WHERE title LIKE ? LIMIT 1').bind(queryPattern).all();
 
           if (!results || results.length === 0) {
-            return new Response(JSON.stringify({ error: "Not found" }), {
+            return new Response(JSON.stringify({}), {
               status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders }
             });
           }
@@ -280,14 +272,14 @@ export default {
           resultObj = results[0];
           cacheMap.set(cacheKey, { data: resultObj, timestamp: now });
         } catch (dbError) {
-          return new Response(JSON.stringify({ error: "Internal Server Error during DB query" }), {
+          return new Response(JSON.stringify({}), {
             status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders }
           });
         }
       }
 
       ctx.waitUntil(
-         env.DB.prepare('UPDATE stats SET total_queries = total_queries + 1 WHERE id = 1').run().catch(console.warn)
+         env.DB.prepare('UPDATE stats SET total_queries = total_queries + 1 WHERE id = 1').run().catch(() => {})
       );
 
       const baseUrl = env.BASE_URL || 'https://www.example.com';
@@ -304,6 +296,6 @@ export default {
       });
     }
 
-    return new Response("Not Found", { status: 404, headers: corsHeaders });
+    return new Response("", { status: 404 });
   }
 };
