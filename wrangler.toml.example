@@ -1,0 +1,27 @@
+# Cloudflare 部署配置示例
+# ⚠️ 真实 ID 已隐藏，请替换为你自己的资源 ID
+
+name = "novel-api"
+main = "worker.js"          
+compatibility_date = "2025-01-01"  
+
+# 自定义域名路由（选填）
+# routes = [
+#   { pattern = "www.your-domain.com/*", zone_name = "your-domain.com" }
+# ]
+
+# 启用 workers.dev 测试域名
+workers_dev = true
+
+[vars]
+# 小说源站根域名
+BASE_URL = "https://www.example.com"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "your-kv-namespace-id-here"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "novel_db"
+database_id = "your-d1-database-id-here"

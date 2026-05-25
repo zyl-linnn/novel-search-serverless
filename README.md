@@ -1,10 +1,20 @@
 ﻿# 📚 小说快搜 (Novel Search)
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Cloudflare-Pages-F38020?logo=cloudflare&logoColor=white" alt="Cloudflare Pages">
+  <img src="https://img.shields.io/badge/Database-D1-F38020?logo=cloudflare&logoColor=white" alt="D1">
+  <img src="https://img.shields.io/badge/Cache-KV-F38020?logo=cloudflare&logoColor=white" alt="KV">
+  <img src="https://img.shields.io/badge/成本-$0-4caf50" alt="零成本">
+  <img src="https://img.shields.io/badge/国内-直连-2196F3" alt="国内直连">
+</p>
+
 > 🚀 零成本 · 全栈 Serverless · 国内直连 · 数据零暴露
 
-一个为贴吧社区打造的**极简小说搜索引擎**。用户输入书名关键词，即可秒级返回对应的书籍详情页链接。
+一个为贴吧社区打造的**极简小说搜索引擎**。用户输入书名关键词，秒级返回书籍详情页链接。数十万条数据完全隐藏在云端，仅按需返回单条结果。
 
-🔗 **在线访问：** https://novel-search.pages.dev
+🔗 **在线访问：** *（部署后自动分配 `xxx.pages.dev` 域名）*
+
+![screenshot](https://via.placeholder.com/800x400?text=📚+小说快搜+截图+（部署后替换）)
 
 ---
 
@@ -13,29 +23,31 @@
 | 特性 | 说明 |
 |------|------|
 | 🔒 **数据安全隔离** | 数十万条爬虫数据全部存储在云端 D1 分布式数据库，前端仅暴露单条检索接口，**源数据永不对外暴露** |
-| ⚡ **边缘计算加速** | 基于 Cloudflare 全球边缘网络，国内直连 .pages.dev 域名，毫秒级响应 |
-| 🛡️ **智能频率控制** | 自研 IP 级别速率限制（Rate Limiting），恶意刷量自动拦截 |
-| 📊 **实时统计大屏** | 页面浏览量 (PV) 与搜索次数 (Queries) 即时可见 |
+| ⚡ **边缘计算加速** | 基于 Cloudflare 全球边缘网络，国内直连 `.pages.dev` 域名，毫秒级响应 |
+| 🛡️ **智能频率控制** | 自研 IP 级别滑动窗口限流算法（10次/分钟），恶意刷量自动返回 429 |
+| 📊 **实时统计大屏** | 页面浏览量 (PV) 与搜索次数 (Queries) 即时可见，数据存于 KV |
 | 💰 **完全免费架构** | Cloudflare Pages + D1 + KV 免费额度内运行，零服务器成本 |
 
 ---
 
 ## 🛠 技术架构
 
-\\\mermaid
+```mermaid
 graph LR
     A[👤 贴吧用户] -->|输入书名| B[🌐 Cloudflare Pages]
     B -->|全栈 _worker.js| C[🗄️ Cloudflare D1<br/>小说数据库]
     B -->|频率校验| D[📦 Cloudflare KV<br/>限流 + PV 统计]
     C -->|返回单条结果| B
     B -->|渲染 HTML| A
-\\\
+```
 
-- **前端：** 原生 HTML/CSS/JS，Bootstrap 5 响应式布局，内嵌于 Worker 同构直出
-- **后端：** Cloudflare Pages Functions（_worker.js），单文件全栈路由分发
-- **数据库：** Cloudflare D1（SQLite 兼容），存放清洗去重后的书籍索引
-- **缓存 & 限流：** Cloudflare KV + 内存 LRU Cache，双重加速
-- **部署：** Git Push → Cloudflare Pages 自动构建部署
+| 层 | 技术 |
+|----|------|
+| 🎨 **前端** | 原生 HTML/CSS/JS，Bootstrap 5 响应式，内嵌 Worker 同构直出 |
+| ⚙️ **后端** | Cloudflare Pages Functions (`_worker.js`)，单文件全栈路由分发 |
+| 🗄️ **数据库** | Cloudflare D1（SQLite 兼容），参数化查询防 SQL 注入 |
+| 📦 **缓存 & 限流** | Cloudflare KV + 内存 LRU Cache，双重加速 |
+| 🚀 **部署** | Git Push → Cloudflare Pages 自动 CI/CD，零停机 |
 
 ---
 
@@ -54,29 +66,38 @@ graph LR
 
 ## 📂 仓库说明
 
-> ⚠️ 本仓库仅包含**网站入口代码**。原始爬虫数据、数据集文件、数据处理脚本均**不在此仓库中**，已通过后端数据库安全隔离。
+> ⚠️ **本仓库仅包含网站入口代码与架构文档。** 原始爬虫数据、数据集文件、数据处理脚本、含敏感 ID 的配置均**不在此仓库中**，已通过 `.gitignore` 和后端数据库双重安全隔离。
 
-\\\
+```
 novel-search-serverless/
 ├── public/
-│   └── _worker.js      # Cloudflare Pages 全栈入口
-├── .gitignore           # 数据安全策略
-├── wrangler.toml        # Cloudflare 部署配置
+│   └── _worker.js          # Cloudflare Pages 全栈入口（前端+后端同构）
+├── .gitignore               # 数据安全策略
+├── wrangler.toml.example    # 部署配置模板（真实 ID 已隐藏）
 └── README.md
-\\\
+```
 
 ---
 
 ## 🚀 一键部署
 
-1. Fork 本仓库到你的 GitHub
-2. 在 Cloudflare Dashboard 创建 **Pages** 项目 → **Connect to Git**
-3. 构建设置：输出目录填 public，框架预设选 None
-4. 绑定你的 D1 数据库 (DB) + KV 命名空间 (RATE_LIMIT_KV)
-5. 添加环境变量 BASE_URL = 你的小说源站域名
-6. 保存 → 自动部署完成 🎉
+1. Fork 本仓库
+2. Cloudflare Dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
+3. 构建配置：
+   - Framework preset: `None`
+   - Build command: 留空
+   - Output directory: `public`
+4. 绑定资源（Settings → Functions）：
+   - **D1 binding**: 变量名 `DB` → 选 `novel_db`
+   - **KV binding**: 变量名 `RATE_LIMIT_KV` → 选你的限流命名空间
+   - **Environment variable**: `BASE_URL` = `https://www.libahao.com`
+5. 点 **Retry deployment** → 🎉 完成！
 
 ---
+
+<p align="center">
+  <sub>Built with ❤️ by YL Z · Powered by Cloudflare Pages</sub>
+</p>
 
 <p align="center">
   <sub>Built with ❤️ by YL Z · Powered by Cloudflare Pages</sub>
