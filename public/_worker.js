@@ -148,6 +148,7 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+    const country = request.headers.get('cf-ipcountry') || '--';
 
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
@@ -247,6 +248,9 @@ export default {
           const { results } = await env.DB.prepare('SELECT title, url FROM books WHERE title LIKE ? LIMIT 1').bind(queryPattern).all();
 
           if (!results || results.length === 0) {
+            ctx.waitUntil(
+              env.DB.prepare('INSERT INTO search_logs (ip, country, keyword, found) VALUES (?, ?, ?, 0)').bind(ip, country, cacheKey).run().catch(() => {})
+            );
             return new Response(JSON.stringify({}), {
               status: 404, headers: { 'Content-Type': 'application/json', ...corsHeaders }
             });
@@ -262,7 +266,10 @@ export default {
       }
 
       ctx.waitUntil(
-         env.DB.prepare('UPDATE stats SET total_queries = total_queries + 1 WHERE id = 1').run().catch(() => {})
+        (async () => {
+          await env.DB.prepare('UPDATE stats SET total_queries = total_queries + 1 WHERE id = 1').run().catch(() => {});
+          await env.DB.prepare('INSERT INTO search_logs (ip, country, keyword, found) VALUES (?, ?, ?, 1)').bind(ip, country, cacheKey).run().catch(() => {});
+        })()
       );
 
       const baseUrl = env.BASE_URL || 'https://www.example.com';
@@ -277,6 +284,34 @@ export default {
       }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
+    }
+
+    if (path === '/analytics') {
+      const key = url.searchParams.get('key') || '';
+      const ANALYTICS_KEY = env.ANALYTICS_KEY || 'novel2026';
+      if (key !== ANALYTICS_KEY) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+
+      try {
+        const [recent, topK, countries, daily] = await Promise.all([
+          env.DB.prepare('SELECT keyword, country, created_at FROM search_logs WHERE found=1 ORDER BY id DESC LIMIT 20').all(),
+          env.DB.prepare('SELECT keyword, COUNT(*) as cnt FROM search_logs WHERE found=1 GROUP BY keyword ORDER BY cnt DESC LIMIT 15').all(),
+          env.DB.prepare('SELECT country, COUNT(*) as cnt FROM search_logs GROUP BY country ORDER BY cnt DESC').all(),
+          env.DB.prepare("SELECT DATE(created_at) as day, COUNT(*) as cnt FROM search_logs GROUP BY day ORDER BY day DESC LIMIT 7").all()
+        ]);
+
+        const formatRows = (rows) => rows.map(r => Object.values(r).join(' | ')).join('\\n');
+        const html2 = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Analytics</title><style>body{font-family:monospace;max-width:900px;margin:20px auto;background:#111;color:#0f0;padding:20px}h2{border-bottom:1px solid #333;padding-bottom:5px;color:#0f0}pre{background:#000;padding:10px;border-radius:4px;overflow-x:auto;font-size:13px}</style></head><body>' +
+          '<h2>📊 最近搜索 (Recent Searches)</h2><pre>' + formatRows(recent.results || []) + '</pre>' +
+          '<h2>🔥 热门关键词 (Top Keywords)</h2><pre>' + formatRows(topK.results || []) + '</pre>' +
+          '<h2>🌍 国家/地区分布 (Country)</h2><pre>' + formatRows(countries.results || []) + '</pre>' +
+          '<h2>📅 每日搜索量 (Daily)</h2><pre>' + formatRows(daily.results || []) + '</pre>' +
+          '</body></html>';
+        return new Response(html2, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } });
+      } catch (e) {
+        return new Response('Analytics error', { status: 500 });
+      }
     }
 
     return new Response("", { status: 404 });
