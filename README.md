@@ -34,10 +34,10 @@
 | 层 | 技术 |
 |----|------|
 | 🎨 **前端** | 原生 HTML/CSS/JS，Bootstrap 5 响应式，内嵌 Worker 同构直出 |
-| ⚙️ **后端** | Cloudflare Pages Functions (`_worker.js`)，单文件全栈路由分发 |
-| 🗄️ **数据库** | Cloudflare D1（SQLite 兼容），参数化查询防 SQL 注入 |
+| ⚙️ **后端** | Cloudflare，单文件全栈路由分发 |
+| 🗄️ **数据库** | Cloudflare D1（SQLite 兼容） |
 | 📦 **缓存 & 限流** | Cloudflare KV + 内存 LRU Cache，双重加速 |
-| 🚀 **部署** | Git Push → Cloudflare Pages 自动 CI/CD，零停机 |
+| 🚀 **部署** | Git → Cloudflare，零停机 |
 
 ---
 
@@ -45,8 +45,8 @@
 
 | 环节 | 涉及能力 |
 |------|----------|
-| **数据工程** | Python 爬虫数据清洗、去重、SQL 批量转换，处理数十 MB 级 JSON 并迁移上云 |
-| **后端开发** | Cloudflare Workers / Pages Functions，RESTful API 设计，路由分发，CORS 处理 |
+| **数据工程** | 基础数据处理，MB 级 JSON 并迁移上云 |
+| **后端开发** | Cloudflare相关，RESTful API 设计，路由分发，CORS 处理 |
 | **数据库** | D1 (SQLite) 建表、索引优化、参数化查询防注入 |
 | **安全防护** | KV 实现滑动窗口限流算法、IP 级别访问控制 |
 | **前端工程** | 原生 JS 异步请求、DOM 操作、Bootstrap UI、统计实时刷新 |
