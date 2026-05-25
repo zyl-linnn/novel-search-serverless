@@ -204,36 +204,18 @@ export default {
         });
       }
 
-      // Rate Limiting
-      const kvKey = `rate_limit:${ip}`;
-      let rateData = null;
-      try {
-        rateData = await env.RATE_LIMIT_KV.get(kvKey, { type: "json" });
-      } catch (e) {
-      }
-      
+      // 内存限流：30秒窗口内仅1次（同边缘节点秒级生效）
+      if (!globalThis.rlMap) globalThis.rlMap = new Map();
+      const rl = globalThis.rlMap;
       const now = Date.now();
-      
-      if (!rateData) {
-        rateData = { count: 1, resetAt: now + 30000 }; 
-      } else {
-        if (now > rateData.resetAt) {
-          rateData = { count: 1, resetAt: now + 30000 };
-        } else {
-          rateData.count++;
-        }
-      }
-
-      // 同步写入 KV 防止竞态条件
-      try {
-        await env.RATE_LIMIT_KV.put(kvKey, JSON.stringify(rateData), { expirationTtl: 30 });
-      } catch (e) {};
-
-      if (rateData.count > 1) {
+      const last = rl.get(ip);
+      if (last && (now - last) < 30000) {
         return new Response(JSON.stringify({}), {
           status: 429, headers: { 'Content-Type': 'application/json', ...corsHeaders }
         });
       }
+      rl.set(ip, now);
+      if (rl.size > 5000) rl.clear();
 
       // LRU Cache
       if (!globalThis.searchCache) {
