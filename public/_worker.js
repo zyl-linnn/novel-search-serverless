@@ -224,9 +224,10 @@ export default {
         }
       }
 
-      ctx.waitUntil(
-        env.RATE_LIMIT_KV.put(kvKey, JSON.stringify(rateData), { expirationTtl: 30 }).catch(() => {})
-      );
+      // 同步写入 KV 防止竞态条件
+      try {
+        await env.RATE_LIMIT_KV.put(kvKey, JSON.stringify(rateData), { expirationTtl: 30 });
+      } catch (e) {};
 
       if (rateData.count > 1) {
         return new Response(JSON.stringify({}), {
