@@ -12,7 +12,7 @@
 
 一个为贴吧部分求助者临时打造的**极简book搜索引擎**。用户输入书名关键词，秒级返回书籍详情页链接。
 
-🔗 **在线访问：
+🔗 **在线访问：https://novel-search-serverless.pages.dev/
 
 ![screenshot](https://via.placeholder.com/800x400?text=📚+小说快搜+截图+（部署后替换）)
 
