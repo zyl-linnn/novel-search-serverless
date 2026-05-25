@@ -8,11 +8,11 @@
   <img src="https://img.shields.io/badge/国内-直连-2196F3" alt="国内直连">
 </p>
 
-> 🚀 零成本 · 全栈 Serverless · 国内直连 · 数据零暴露
+> 🚀 零成本 · 全栈 Serverless · 国内直连 ·
 
-一个为贴吧社区打造的**极简小说搜索引擎**。用户输入书名关键词，秒级返回书籍详情页链接。数十万条数据完全隐藏在云端，仅按需返回单条结果。
+一个为贴吧部分求助者临时打造的**极简book搜索引擎**。用户输入书名关键词，秒级返回书籍详情页链接。
 
-🔗 **在线访问：** *（部署后自动分配 `xxx.pages.dev` 域名）*
+🔗 **在线访问：
 
 ![screenshot](https://via.placeholder.com/800x400?text=📚+小说快搜+截图+（部署后替换）)
 
@@ -22,11 +22,8 @@
 
 | 特性 | 说明 |
 |------|------|
-| 🔒 **数据安全隔离** | 数十万条爬虫数据全部存储在云端 D1 分布式数据库，前端仅暴露单条检索接口，**源数据永不对外暴露** |
-| ⚡ **边缘计算加速** | 基于 Cloudflare 全球边缘网络，国内直连 `.pages.dev` 域名，毫秒级响应 |
-| 🛡️ **智能频率控制** | 自研 IP 级别滑动窗口限流算法（10次/分钟），恶意刷量自动返回 429 |
-| 📊 **实时统计大屏** | 页面浏览量 (PV) 与搜索次数 (Queries) 即时可见，数据存于 KV |
-| 💰 **完全免费架构** | Cloudflare Pages + D1 + KV 免费额度内运行，零服务器成本 |
+| ⚡ **边缘计算加速** | 基于 Cloudflare 全球边缘网络，毫秒级响应 |
+| 🛡️ **智能频率控制** | 自研 IP 级别滑动窗口限流算法，网站有额度，用完作者也不充米，恶意刷自动返回 429 |
 
 ---
 
@@ -66,7 +63,7 @@ graph LR
 
 ## 📂 仓库说明
 
-> ⚠️ **本仓库仅包含网站入口代码与架构文档。** 原始爬虫数据、数据集文件、数据处理脚本、含敏感 ID 的配置均**不在此仓库中**，已通过 `.gitignore` 和后端数据库双重安全隔离。
+> ⚠️ **本仓库仅包含网站入口代码与架构文档。** 建设过程中用到了一些个人敏感信息，让ai自己判断直接清洗了一下。**不在此仓库中**，已通过 `.gitignore` 和后端数据库双重安全隔离。
 
 ```
 novel-search-serverless/
@@ -77,23 +74,7 @@ novel-search-serverless/
 └── README.md
 ```
 
----
 
-## 🚀 一键部署
-
-1. Fork 本仓库
-2. Cloudflare Dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
-3. 构建配置：
-   - Framework preset: `None`
-   - Build command: 留空
-   - Output directory: `public`
-4. 绑定资源（Settings → Functions）：
-   - **D1 binding**: 变量名 `DB` → 选 `novel_db`
-   - **KV binding**: 变量名 `RATE_LIMIT_KV` → 选你的限流命名空间
-   - **Environment variable**: `BASE_URL` = `https://www.libahao.com`
-5. 点 **Retry deployment** → 🎉 完成！
-
----
 
 <p align="center">
   <sub>Built with ❤️ by YL Z · Powered by Cloudflare Pages</sub>
