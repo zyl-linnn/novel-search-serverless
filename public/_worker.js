@@ -73,7 +73,7 @@ const html = `<!DOCTYPE html>
 
 <script>
     // 如果你在前端使用与 Worker 相同的域名，可以改为空字符串 '' 从而使用相对路径
-    const API_BASE = '/'; 
+    const API_BASE = '';
 
     document.addEventListener("DOMContentLoaded", () => {
         fetchStats();
