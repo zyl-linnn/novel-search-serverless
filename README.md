@@ -1,67 +1,83 @@
-# 小说快搜网站部署指南
+﻿# 📚 小说快搜 (Novel Search)
 
-这是用于你自己的爬虫数据转网站的后端与前端源码，采用了 Cloudflare D1 数据库、KV 以及 Worker 的技术方案（实现了极低成本/无成本托管、限制搜素频率、隐去整体爬虫数据）。
+> 🚀 零成本 · 全栈 Serverless · 国内直连 · 数据零暴露
 
-## 准备步骤
+一个为贴吧社区打造的**极简小说搜索引擎**。用户输入书名关键词，即可秒级返回对应的书籍详情页链接。
 
-按照以下步骤完成最终部署。由于你已经拥有了 Active 状态的 Cloudflare 域名 `mysearch.dpdns.org`，所以前面的域名与 NS 修改操作无需再进行了。
+🔗 **在线访问：** https://novel-search.pages.dev
 
-### 第一步：在 Cloudflare 中创建必需的资源
+---
 
-1. **创建 D1 数据库**
-   - 登录 Cloudflare 控制台，在左侧菜单点击 **D1**，点击 **创建数据库**，名字填写 `novel_db`。
-   - 记下该数据库的 `database_id`。
+## ✨ 核心特性
 
-2. **创建 KV 命名空间**
-   - 在左侧菜单点击 **KV**，点击 **创建命名空间**，名字填写 `rate_limit_kv`。
-   - 记下该命名空间的 `id`。
+| 特性 | 说明 |
+|------|------|
+| 🔒 **数据安全隔离** | 数十万条爬虫数据全部存储在云端 D1 分布式数据库，前端仅暴露单条检索接口，**源数据永不对外暴露** |
+| ⚡ **边缘计算加速** | 基于 Cloudflare 全球边缘网络，国内直连 .pages.dev 域名，毫秒级响应 |
+| 🛡️ **智能频率控制** | 自研 IP 级别速率限制（Rate Limiting），恶意刷量自动拦截 |
+| 📊 **实时统计大屏** | 页面浏览量 (PV) 与搜索次数 (Queries) 即时可见 |
+| 💰 **完全免费架构** | Cloudflare Pages + D1 + KV 免费额度内运行，零服务器成本 |
 
-3. **修改 `wrangler.toml` 配置文件**
-   - 将上面你记下的 KV ID 和 D1 ID 填写到本项目目录下的 `wrangler.toml` 文件对应的 `id` 和 `database_id` 处。
-   - 配置 `[vars]` 里的 `BASE_URL`，把 `https://www.example.com` 替换为真实小说对应网站的主域名。
+---
 
-### 第二步：导入原始数据
+## 🛠 技术架构
 
-1. 本地安装 Node.js 后，在终端中可以安装并登录 wrangler：
-   ```bash
-   npm install -g wrangler
-   wrangler login
-   ```
-2. 运行 Python 数据整理脚本：
-   ```bash
-   # 安装所需环境（通常直接运行即可，因为只用到了标准库）
-   python prepare_data.py
-   ```
-   **这会读取你当前目录下的所有 `all_books*.json`，完成去重和组装，最后在目录下生成一个名为 `import.sql` 的文件。**
-3. 将数据部署/导入到 Cloudflare D1 数据库：
-   ```bash
-   wrangler d1 execute novel_db --file=import.sql --batch
-   ```
-   *（如果由于网络情况导致超时报错，你可能需要拆分 `import.sql` 分多次或缩小上述脚本中 `batch_size` 变量）*
+\\\mermaid
+graph LR
+    A[👤 贴吧用户] -->|输入书名| B[🌐 Cloudflare Pages]
+    B -->|全栈 _worker.js| C[🗄️ Cloudflare D1<br/>小说数据库]
+    B -->|频率校验| D[📦 Cloudflare KV<br/>限流 + PV 统计]
+    C -->|返回单条结果| B
+    B -->|渲染 HTML| A
+\\\
 
-### 第三步：发布 API 后端 (Worker)
+- **前端：** 原生 HTML/CSS/JS，Bootstrap 5 响应式布局，内嵌于 Worker 同构直出
+- **后端：** Cloudflare Pages Functions（_worker.js），单文件全栈路由分发
+- **数据库：** Cloudflare D1（SQLite 兼容），存放清洗去重后的书籍索引
+- **缓存 & 限流：** Cloudflare KV + 内存 LRU Cache，双重加速
+- **部署：** Git Push → Cloudflare Pages 自动构建部署
 
-1. 在终端中直接运行发布命令：
-   ```bash
-   wrangler deploy
-   ```
-2. 这会自动读取 `wrangler.toml` 和 `worker.js` 发布你的 Worker 接口。你控制台会输出一个默认的 URL 比如 `https://novel-api.xxxxxxxx.workers.dev`。
+---
 
-### 第四步：部署前端页面
+## 🔧 技能栈展示
 
-**方案 A：通过 GitHub Pages (推荐)**
-1. 使用文本编辑器打开 `index.html`。
-2. 找到代码中的 `const API_BASE = 'https://api.mysearch.dpdns.org';` 替换为你刚发布的 Worker API 网址。
-3. 将 `index.html` 提交到你的 GitHub 仓库。
-4. 在你的 GitHub 仓库中点击右上角的 **Settings** -> 左侧边栏的 **Pages**，然后 Source 配置从分支主目录 `/ (root)` 发布。
+| 环节 | 涉及能力 |
+|------|----------|
+| **数据工程** | Python 爬虫数据清洗、去重、SQL 批量转换，处理数十 MB 级 JSON 并迁移上云 |
+| **后端开发** | Cloudflare Workers / Pages Functions，RESTful API 设计，路由分发，CORS 处理 |
+| **数据库** | D1 (SQLite) 建表、索引优化、参数化查询防注入 |
+| **安全防护** | KV 实现滑动窗口限流算法、IP 级别访问控制 |
+| **前端工程** | 原生 JS 异步请求、DOM 操作、Bootstrap UI、统计实时刷新 |
+| **DevOps** | Git + Cloudflare Pages CI/CD，零停机自动部署 |
 
-**方案 B：使用 Cloudflare Pages 绑定域名并发布**
-1. 同样修改 `index.html` 中的 API 地址后保存。
-2. 在 Cloudflare 控制台，进入 **Workers & Pages** -> **Pages**，创建项目，选择直接上传你的包含 `index.html` 的文件夹，进行部署。
-3. 给它绑定你现成的域名（如 `mysearch.dpdns.org`）。
+---
 
-### 服务限制测试
+## 📂 仓库说明
 
-- 可以访问你的页面使用搜索功能。
-- 疯狂点击按钮进行搜索（或者用脚本刷），1分钟内达到10次后会看到 **“查询太频繁啦”** 错误，从而保护了你的服务。 
-- 原生的全量 JSON 数据完全隐身于背后的数据库中，不再对外暴露下载！
+> ⚠️ 本仓库仅包含**网站入口代码**。原始爬虫数据、数据集文件、数据处理脚本均**不在此仓库中**，已通过后端数据库安全隔离。
+
+\\\
+novel-search-serverless/
+├── public/
+│   └── _worker.js      # Cloudflare Pages 全栈入口
+├── .gitignore           # 数据安全策略
+├── wrangler.toml        # Cloudflare 部署配置
+└── README.md
+\\\
+
+---
+
+## 🚀 一键部署
+
+1. Fork 本仓库到你的 GitHub
+2. 在 Cloudflare Dashboard 创建 **Pages** 项目 → **Connect to Git**
+3. 构建设置：输出目录填 public，框架预设选 None
+4. 绑定你的 D1 数据库 (DB) + KV 命名空间 (RATE_LIMIT_KV)
+5. 添加环境变量 BASE_URL = 你的小说源站域名
+6. 保存 → 自动部署完成 🎉
+
+---
+
+<p align="center">
+  <sub>Built with ❤️ by YL Z · Powered by Cloudflare Pages</sub>
+</p>

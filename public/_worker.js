@@ -67,9 +67,9 @@ const html = `<!DOCTYPE html>
 </div>
 
 <div class="footer">
+    本页已被浏览 <span id="totalPageViews" class="badge bg-info">0</span> 次 · 
     累计已查询 <span id="totalQueries" class="badge bg-secondary">0</span> 次<br>
-    &copy; 2026 小说快搜 | Data by Cloudflare Workers
-</div>
+    &copy; 2026 小说快搜 | Powered by Cloudflare Pages</div>
 
 <script>
     // 如果你在前端使用与 Worker 相同的域名，可以改为空字符串 '' 从而使用相对路径
@@ -127,7 +127,8 @@ const html = `<!DOCTYPE html>
             const resp = await fetch(\`\${API_BASE}/stats\`);
             if (resp.ok) {
                 const data = await resp.json();
-                document.getElementById('totalQueries').textContent = data.total_queries;
+                document.getElementById('totalQueries').textContent = data.total_queries || 0;
+                document.getElementById('totalPageViews').textContent = data.page_views || 0;
             }
         } catch(e) {
             console.error('Fetch stats failed', e);
@@ -159,9 +160,18 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // 最新修改：如果是主页请求，直接以 text/html 格式返回我们内置在一起的网页！
-    // 这样就彻底不再需要部署 Pages 项目，和恼人的验证再见了。
+    // 主页：返回完整 HTML 页面，同时记录一次页面浏览 (Page View)
     if (path === '/' || path === '/index.html') {
+      // 异步写入 KV，不阻塞页面响应
+      ctx.waitUntil(
+        (async () => {
+          try {
+            const current = await env.RATE_LIMIT_KV.get('stats:page_views');
+            const count = current ? parseInt(current) + 1 : 1;
+            await env.RATE_LIMIT_KV.put('stats:page_views', count.toString());
+          } catch(e) { console.warn('PV write failed', e); }
+        })()
+      );
       return new Response(html, {
         headers: { 'Content-Type': 'text/html;charset=UTF-8' }
       });
@@ -175,14 +185,19 @@ export default {
 
     if (path === '/stats') {
       try {
-        const { results } = await env.DB.prepare('SELECT total_queries FROM stats WHERE id = 1').all();
+        // 并行读取：D1 查搜索次数 + KV 查页面浏览量
+        const [dbResult, pvRaw] = await Promise.all([
+          env.DB.prepare('SELECT total_queries FROM stats WHERE id = 1').all(),
+          env.RATE_LIMIT_KV.get('stats:page_views')
+        ]);
         let count = 0;
-        if (results && results.length > 0) count = results[0].total_queries;
-        return new Response(JSON.stringify({ total_queries: count }), {
+        if (dbResult.results && dbResult.results.length > 0) count = dbResult.results[0].total_queries;
+        const pageViews = pvRaw ? parseInt(pvRaw) : 0;
+        return new Response(JSON.stringify({ total_queries: count, page_views: pageViews }), {
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         });
       } catch (err) {
-        return new Response(JSON.stringify({ total_queries: "Error reading stats" }), {
+        return new Response(JSON.stringify({ total_queries: "Error", page_views: 0 }), {
           status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders }
         });
       }

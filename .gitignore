@@ -1,10 +1,20 @@
-# 数据文件（绝对不能泄露）
+# ========== 数据文件（绝对不能泄露）==========
 *.json
 *.txt
 *.sql
 *.sqlite
 
-# 本地开发与环境缓存
+# ========== 爬虫与数据处理脚本（不放仓库）==========
+spider*.py
+prepare_data.py
+__pycache__/
+
+# ========== 旧版前端文件（已内嵌到 Worker）==========
+frontend/
+index.html
+worker.js
+
+# ========== 本地开发与环境缓存 ==========
 node_modules/
 .wrangler/
 .DS_Store
