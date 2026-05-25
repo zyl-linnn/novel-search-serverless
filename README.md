@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/国内-直连-2196F3" alt="国内直连">
 </p>
 
-> 🚀 零成本 · 全栈 Serverless · 国内直连 ·
+> 🚀 低成本 · 全栈 Serverless · 国内直连 ·
 
 一个为贴吧部分求助者临时打造的**极简book搜索引擎**。用户输入书名关键词，秒级返回书籍详情页链接。
 
