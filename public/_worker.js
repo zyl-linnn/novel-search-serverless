@@ -52,7 +52,13 @@ const html = `<!DOCTYPE html>
             <div class="quota-hint" style="font-size:0.8rem;color:#999;text-align:center;margin-top:8px;">⏳ 额度有限，30 秒间隔，耗完即止</div>
         </form>
 
-        <div id="errorMsg" class="alert alert-danger" style="display: none;"></div>
+        <div class="info-text" style="font-size:0.78rem;color:#888;text-align:center;margin-top:12px;line-height:1.6;">
+            本站临时开放，提供一个临时公益帮助工具。<br>
+            本站查不到不等于真没有。<br>
+            本站建立简介详见 <a href="https://github.com/zyl-linnn/novel-search-serverless" target="_blank" style="color:#6c757d;">GitHub</a>
+        </div>
+
+        <div id="errorMsg" class="alert alert-warning" style="display: none;"></div>
 
         <div id="resultCard" class="card result-card border-success">
             <div class="card-header bg-success text-white">
