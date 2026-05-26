@@ -13,7 +13,7 @@
 
 🔗 **在线访问：** * https://novel-search-serverless.pages.dev/ *
 
-![screenshot](https://via.placeholder.com/800x400?text=📚+小说快搜+截图+（部署后替换）)
+<img width="863" alt="小说快搜截图" src="https://github.com/user-attachments/assets/1de5605b-6ec6-437f-9146-19fa747cee4a" />
 
 ---
 
