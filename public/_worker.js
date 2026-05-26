@@ -55,7 +55,8 @@ const html = `<!DOCTYPE html>
         <div class="info-text" style="font-size:0.78rem;color:#888;text-align:center;margin-top:12px;line-height:1.6;">
             本站临时开放，提供一个临时公益帮助工具。<br>
             本站查不到不等于真没有。<br>
-            本站建立简介详见 <a href="https://github.com/zyl-linnn/novel-search-serverless" target="_blank" style="color:#6c757d;">GitHub</a>
+            本站建立简介详见 <a href="https://github.com/zyl-linnn/novel-search-serverless" target="_blank" style="color:#6c757d;">GitHub</a><br>
+            https://github.com/zyl-linnn/novel-search-serverless
         </div>
 
         <div id="errorMsg" class="alert alert-warning" style="display: none;"></div>
