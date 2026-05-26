@@ -4,15 +4,14 @@
   <img src="https://img.shields.io/badge/Cloudflare-Pages-F38020?logo=cloudflare&logoColor=white" alt="Cloudflare Pages">
   <img src="https://img.shields.io/badge/Database-D1-F38020?logo=cloudflare&logoColor=white" alt="D1">
   <img src="https://img.shields.io/badge/Cache-KV-F38020?logo=cloudflare&logoColor=white" alt="KV">
-  <img src="https://img.shields.io/badge/成本-$0-4caf50" alt="零成本">
   <img src="https://img.shields.io/badge/国内-直连-2196F3" alt="国内直连">
 </p>
 
-> 🚀 零成本 · 全栈 Serverless · 国内直连 · 数据零暴露
+> 🚀  全栈 Serverless · 国内直连 · （尊重近期官方的xx行动选择，等官方开放后本项目会全面开源，顺手点个星吧）
 
-一个为贴吧社区打造的**极简小说搜索引擎**。用户输入书名关键词，秒级返回书籍详情页链接。数十万条数据完全隐藏在云端，仅按需返回单条结果。
+一个因为贴吧用户求助打造的**极简小说搜索引擎**。用户输入书名关键词，秒级返回书籍详情页链接。在公开库中留此文档另做分享与记录。
 
-🔗 **在线访问：** *（部署后自动分配 `xxx.pages.dev` 域名）*
+🔗 **在线访问：** * https://novel-search-serverless.pages.dev/ *
 
 ![screenshot](https://via.placeholder.com/800x400?text=📚+小说快搜+截图+（部署后替换）)
 
@@ -22,11 +21,10 @@
 
 | 特性 | 说明 |
 |------|------|
-| 🔒 **数据安全隔离** | 数十万条爬虫数据全部存储在云端 D1 分布式数据库，前端仅暴露单条检索接口，**源数据永不对外暴露** |
 | ⚡ **边缘计算加速** | 基于 Cloudflare 全球边缘网络，国内直连 `.pages.dev` 域名，毫秒级响应 |
-| 🛡️ **智能频率控制** | 自研 IP 级别滑动窗口限流算法（10次/分钟），恶意刷量自动返回 429 |
-| 📊 **实时统计大屏** | 页面浏览量 (PV) 与搜索次数 (Queries) 即时可见，数据存于 KV |
-| 💰 **完全免费架构** | Cloudflare Pages + D1 + KV 免费额度内运行，零服务器成本 |
+| 🛡️ **智能频率控制** | 自研 IP 级别滑动窗口限流算法，恶意刷量自动返回 429 |
+| 📊 **简要显示** | 页面浏览量与搜索次数可见，数据存于 KV |
+| 💰 **架构** | Cloudflare Pages + D1 + KV  |
 
 ---
 
@@ -34,8 +32,8 @@
 
 ```mermaid
 graph LR
-    A[👤 贴吧用户] -->|输入书名| B[🌐 Cloudflare Pages]
-    B -->|全栈 _worker.js| C[🗄️ Cloudflare D1<br/>小说数据库]
+    A[👤 用户] -->|输入书名| B[🌐 Cloudflare Pages]
+    B -->|全栈 _worker.js| C[🗄️ Cloudflare D1<br/>]
     B -->|频率校验| D[📦 Cloudflare KV<br/>限流 + PV 统计]
     C -->|返回单条结果| B
     B -->|渲染 HTML| A
@@ -55,7 +53,7 @@ graph LR
 
 | 环节 | 涉及能力 |
 |------|----------|
-| **数据工程** | Python 爬虫数据清洗、去重、SQL 批量转换，处理数十 MB 级 JSON 并迁移上云 |
+| **数据工程** | 数据清处理，迁移上云 |
 | **后端开发** | Cloudflare Workers / Pages Functions，RESTful API 设计，路由分发，CORS 处理 |
 | **数据库** | D1 (SQLite) 建表、索引优化、参数化查询防注入 |
 | **安全防护** | KV 实现滑动窗口限流算法、IP 级别访问控制 |
@@ -66,39 +64,23 @@ graph LR
 
 ## 📂 仓库说明
 
-> ⚠️ **本仓库仅包含网站入口代码与架构文档。** 原始爬虫数据、数据集文件、数据处理脚本、含敏感 ID 的配置均**不在此仓库中**，已通过 `.gitignore` 和后端数据库双重安全隔离。
+> ⚠️ **本仓库仅包含网站入口代码与架构文档。** 各种敏感资料和开发中私人令牌等均让ai自己判断清洗了一遍**暂时不在此仓库中**。
 
 ```
 novel-search-serverless/
 ├── public/
-│   └── _worker.js          # Cloudflare Pages 全栈入口（前端+后端同构）
-├── .gitignore               # 数据安全策略
-├── wrangler.toml.example    # 部署配置模板（真实 ID 已隐藏）
+│   └── _worker.js          # Cloudflare  全栈入口
+├── .gitignore               # 数据策略
+├── wrangler.toml.example    # 部署配置
 └── README.md
 ```
 
 ---
 
-## 🚀 一键部署
 
-1. Fork 本仓库
-2. Cloudflare Dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
-3. 构建配置：
-   - Framework preset: `None`
-   - Build command: 留空
-   - Output directory: `public`
-4. 绑定资源（Settings → Functions）：
-   - **D1 binding**: 变量名 `DB` → 选 `novel_db`
-   - **KV binding**: 变量名 `RATE_LIMIT_KV` → 选你的限流命名空间
-   - **Environment variable**: `BASE_URL` = `https://www.libahao.com`
-5. 点 **Retry deployment** → 🎉 完成！
-
----
 
 <p align="center">
   <sub>Built with ❤️ by YL Z · Powered by Cloudflare Pages</sub>
 </p>
 
-<p align="center">
-  <sub>Built with ❤️ by YL Z · Powered by Cloudflare Pages</sub>
-</p>
+
