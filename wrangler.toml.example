@@ -14,7 +14,7 @@ compatibility_date = "2025-01-01"
 workers_dev = true
 
 [vars]
-# 小说源站根域名
+# 源站根域名
 BASE_URL = "https://www.example.com"
 
 [[kv_namespaces]]
